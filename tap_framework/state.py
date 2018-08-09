@@ -1,3 +1,4 @@
+import datetime
 import json
 import singer
 
@@ -21,9 +22,15 @@ def incorporate(state, table, field, value):
     if value is None:
         return state
 
-    new_state = state.copy()
+    if state is None:
+        new_state = {}
+    else:
+        new_state = state.copy()
 
-    parsed = parse(value).strftime("%Y-%m-%d %H:%M:%S")
+    if isinstance(value, datetime.datetime):
+        parsed = value.strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        parsed = parse(value).strftime("%Y-%m-%d %H:%M:%S")
 
     if 'bookmarks' not in new_state:
         new_state['bookmarks'] = {}
