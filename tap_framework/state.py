@@ -36,7 +36,7 @@ def incorporate(state, table, field, value):
         new_state['bookmarks'] = {}
 
     if(new_state['bookmarks'].get(table, {}).get('last_record') is None or
-       new_state['bookmarks'].get(table, {}).get('last_record') < value):
+       new_state['bookmarks'].get(table, {}).get('last_record') < parsed):
         new_state['bookmarks'][table] = {
             'field': field,
             'last_record': parsed,
