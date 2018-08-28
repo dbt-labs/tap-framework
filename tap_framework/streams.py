@@ -49,7 +49,6 @@ class BaseStream:
         """
         raise RuntimeError("get_url not implemented!")
 
-
     @classmethod
     def requirements_met(cls, catalog):
         selected_streams = [
@@ -63,18 +62,46 @@ class BaseStream:
         return stream_catalog.stream == cls.TABLE
 
     def generate_catalog(self):
+        schema = self.get_schema()
+        mdata = singer.metadata.new()
+
+        mdata = singer.metadata.write(
+            mdata,
+            (),
+            'inclusion',
+            'available'
+        )
+
+        for field_name, field_schema in schema.get('properties').items():
+            inclusion = 'available'
+
+            if field_name in self.KEY_PROPERTIES:
+                inclusion = 'automatic'
+
+            mdata = singer.metadata.write(
+                mdata,
+                ('properties', field_name),
+                'inclusion',
+                inclusion
+            )
+
         return [{
             'tap_stream_id': self.TABLE,
             'stream': self.TABLE,
             'key_properties': self.KEY_PROPERTIES,
-            'schema': self.get_schema()
+            'schema': self.get_schema(),
+            'metadata': singer.metadata.to_list(mdata)
         }]
+
+    def transform_record(self, record):
+        with singer.Transformer() as tx:
+            return tx.transform(
+                record,
+                self.catalog.schema.to_dict(),
+                singer.metadata.to_map(self.catalog.metadata))
 
     def get_catalog_keys(self):
         return list(self.catalog.schema.properties.keys())
-
-    def filter_keys(self, obj):
-        return project(obj, self.get_catalog_keys())
 
     def write_schema(self):
         singer.write_schema(
@@ -109,7 +136,7 @@ class BaseStream:
 
                 singer.write_records(
                     table,
-                    [self.filter_keys(obj)])
+                    [self.transform_record(obj)])
 
                 counter.increment()
 
@@ -141,7 +168,7 @@ class ChildStream(BaseStream):
             for obj in data:
                 singer.write_records(
                     table,
-                    [self.filter_keys(
+                    [self.transform_record(
                         self.incorporate_parent_id(obj, parent))])
 
                 counter.increment()

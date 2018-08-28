@@ -29,11 +29,26 @@ class Runner:
         self.client = client
         self.available_streams = available_streams
 
+    def is_selected(self, stream_catalog):
+        metadata = singer.metadata.to_map(stream_catalog.metadata)
+        stream_metadata = metadata.get((), {})
+
+        inclusion = stream_metadata.get('inclusion')
+        selected = stream_metadata.get('selected')
+
+        if inclusion == 'unsupported':
+            return False
+
+        elif selected is not None:
+            return selected
+
+        return inclusion == 'automatic'
+
     def get_streams_to_replicate(self):
         streams = []
 
         for stream_catalog in self.catalog.streams:
-            if not stream_catalog.schema.selected:
+            if not self.is_selected(stream_catalog):
                 LOGGER.info("'{}' is not marked selected, skipping."
                             .format(stream_catalog.stream))
                 continue
