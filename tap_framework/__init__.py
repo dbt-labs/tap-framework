@@ -6,18 +6,9 @@ import sys
 import singer
 
 from tap_framework.state import save_state
+from tap_framework.streams import is_selected
 
 LOGGER = singer.get_logger()  # noqa
-
-
-def is_selected(stream_catalog):
-    if stream_catalog.schema.inclusion == 'unsupported':
-        return False
-
-    elif stream_catalog.schema.selected is not None:
-        return stream_catalog.schema.selected
-
-    return stream_catalog.schema.inclusion == 'automatic'
 
 
 class Runner:
@@ -29,26 +20,11 @@ class Runner:
         self.client = client
         self.available_streams = available_streams
 
-    def is_selected(self, stream_catalog):
-        metadata = singer.metadata.to_map(stream_catalog.metadata)
-        stream_metadata = metadata.get((), {})
-
-        inclusion = stream_metadata.get('inclusion')
-        selected = stream_metadata.get('selected')
-
-        if inclusion == 'unsupported':
-            return False
-
-        elif selected is not None:
-            return selected
-
-        return inclusion == 'automatic'
-
     def get_streams_to_replicate(self):
         streams = []
 
         for stream_catalog in self.catalog.streams:
-            if not self.is_selected(stream_catalog):
+            if not is_selected(stream_catalog):
                 LOGGER.info("'{}' is not marked selected, skipping."
                             .format(stream_catalog.stream))
                 continue

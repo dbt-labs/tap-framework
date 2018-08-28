@@ -4,9 +4,23 @@ import singer
 import singer.utils
 import singer.metrics
 
-from funcy import project
-
 LOGGER = singer.get_logger()
+
+
+def is_selected(stream_catalog):
+    metadata = singer.metadata.to_map(stream_catalog.metadata)
+    stream_metadata = metadata.get((), {})
+
+    inclusion = stream_metadata.get('inclusion')
+    selected = stream_metadata.get('selected')
+
+    if inclusion == 'unsupported':
+        return False
+
+    elif selected is not None:
+        return selected
+
+    return inclusion == 'automatic'
 
 
 class BaseStream:
@@ -52,7 +66,7 @@ class BaseStream:
     @classmethod
     def requirements_met(cls, catalog):
         selected_streams = [
-            s.stream for s in catalog.streams if s.schema.selected
+            s.stream for s in catalog.streams if is_selected(s)
         ]
 
         return set(cls.REQUIRES).issubset(selected_streams)
@@ -95,10 +109,15 @@ class BaseStream:
 
     def transform_record(self, record):
         with singer.Transformer() as tx:
+            metadata = {}
+
+            if self.catalog.metadata is not None:
+                metadata = singer.metadata.to_map(self.catalog.metadata)
+
             return tx.transform(
                 record,
                 self.catalog.schema.to_dict(),
-                singer.metadata.to_map(self.catalog.metadata))
+                metadata)
 
     def get_catalog_keys(self):
         return list(self.catalog.schema.properties.keys())

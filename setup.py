@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 import os.path
 
 setup(name='tap-framework',
-      version='0.0.3',
+      version='0.0.4',
       description='Framework for building Singer.io taps',
       author='Fishtown Analytics',
       url='http://fishtownanalytics.com',
