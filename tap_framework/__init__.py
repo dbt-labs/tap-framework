@@ -23,6 +23,9 @@ class Runner:
     def get_streams_to_replicate(self):
         streams = []
 
+        if not self.catalog:
+            return streams
+
         for stream_catalog in self.catalog.streams:
             if not is_selected(stream_catalog):
                 LOGGER.info("'{}' is not marked selected, skipping."
