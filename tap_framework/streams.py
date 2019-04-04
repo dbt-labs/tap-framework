@@ -26,7 +26,7 @@ def is_selected(stream_catalog):
 class BaseStream:
     # GLOBAL PROPERTIES
     TABLE = None
-    KEY_PROPERTIES = ['id']
+    KEY_PROPERTIES = []
     API_METHOD = 'GET'
     REQUIRES = []
 
